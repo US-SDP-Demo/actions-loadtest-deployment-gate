@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "actions_loadtest_deployment_gate": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7075",
+      "launchBrowser": false
+    }
+  }
+}
