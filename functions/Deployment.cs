@@ -85,10 +85,10 @@ namespace DeploymentGate
 
         private async Task PostDeploymentStatus(Payload payload, string status) 
         {
-            var token = _auth.FetchInstallationToken(payload.installation.id.ToString());
-
-            using (_client)
+            var ghclient = await _auth.FetchInstallationClient(payload.installation.id.ToString());
+            using ()
             {
+                ghclient.
                 _client.DefaultRequestHeaders.Add("Authorization", $"token {token}");
                 _client.DefaultRequestHeaders.Add("User-Agent", "Azure-Load-Test-Deployment-Gate");
                 _client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");

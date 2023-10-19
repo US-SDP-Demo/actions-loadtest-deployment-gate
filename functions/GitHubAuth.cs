@@ -9,6 +9,7 @@ using System.Text;
 using System.Net;
 using System.Security.Cryptography;
 using System.Net.Http.Json;
+using Octokit;
 
 namespace github_app_auth
 {
@@ -16,11 +17,13 @@ namespace github_app_auth
     {
         private readonly ILogger _logger;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly GitHubClient _ghclient;
 
-        public GitHubAuth(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory)
+        public GitHubAuth(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, GitHubClient ghclient)
         {
             _logger = loggerFactory.CreateLogger<GitHubAuth>();
             _httpClientFactory = httpClientFactory;
+            _ghclient = ghclient;
         }
 
         private string GenerateJwtToken(string installationId)
@@ -58,30 +61,26 @@ namespace github_app_auth
             }
         }
 
-        internal async Task<string> FetchInstallationToken (string installationId)
+        internal async Task<GitHubClient> FetchInstallationClient (string installationId)
         {
             try 
             {
                 var jwt = GenerateJwtToken(installationId);
+                _ghclient.Credentials = new Credentials(jwt, AuthenticationType.Bearer);
 
-                string token = string.Empty;
+                var response = await _ghclient.GitHubApps.CreateInstallationToken(int.Parse(installationId));
 
-                using (var client = _httpClientFactory.CreateClient())
+                var installationClient = new GitHubClient(new ProductHeaderValue("Azure-Load-Test-Deployment-Gate"))
                 {
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {jwt}");
-                    client.DefaultRequestHeaders.Add("User-Agent", "Azure-Load-Test-Deployment-Gate");
-                    var response = client.PostAsync($"https://api.github.com/app/installations/{installationId}/access_tokens", null).Result;
-                    var result = await response.Content.ReadFromJsonAsync<AccessToken>();
-                    if (result != null)
-                        token = result.token;
-                }
+                    Credentials = new Credentials(response.Token)
+                };
 
-                return token;
+                return installationClient;
             }
             catch(Exception ex)
             {
                 _logger.LogError(ex, "Error fetching installation token");
-                return string.Empty;
+                return null;
             }
         }
 

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Azure.Developer.LoadTesting;
 using Azure.Identity;
 using github_app_auth;
+using Octokit;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
@@ -14,6 +15,9 @@ var host = new HostBuilder()
             return new LoadTestRunClient(uri, new DefaultAzureCredential());
         });
         services.AddSingleton<GitHubAuth>();
+        services.AddSingleton<GitHubClient>((sp) => {
+            return new GitHubClient(new ProductHeaderValue("Azure-Load-Test-Deployment-Gate"));
+        });
     })
     .Build();
 
