@@ -64,9 +64,10 @@ namespace DeploymentGate
             {
                 TestRun testRun = null;
                 // Get the most recent load test run
-                await foreach (var t in _loadtest.GetTestRunsAsync(orderby: "executedDateTime asc"))
+                await foreach (var t in _loadtest.GetTestRunsAsync(orderby: "executedDateTime asc", executionFrom: DateTime.Now.AddMinutes(-30)))
                 {
                     testRun = t.ToObjectFromJson<TestRun>();
+                    break;
                 }
 
                 if (testRun == null)
