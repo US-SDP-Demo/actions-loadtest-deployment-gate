@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Azure.Developer.LoadTesting;
 using System.Text;
 using github_app_auth;
+using System.Net.Http.Json;
 
 namespace DeploymentGate
 {
@@ -85,16 +86,27 @@ namespace DeploymentGate
 
         private async Task PostDeploymentStatus(Payload payload, string status) 
         {
-            var ghclient = await _auth.FetchInstallationClient(payload.installation.id.ToString());
-            using ()
+            var token = await _auth.FetchInstallationToken(payload.installation.id.ToString());
+            var content = JsonContent.Create(new { environment_name = payload.deployment.environment, state = status, comment = "load test passed" });
+
+            using (_client)
             {
-                ghclient.
                 _client.DefaultRequestHeaders.Add("Authorization", $"token {token}");
                 _client.DefaultRequestHeaders.Add("User-Agent", "Azure-Load-Test-Deployment-Gate");
                 _client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
                 _client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-                var response = await _client.PostAsync(payload.deployment.statuses_url, new StringContent($"{{ \"state\": \"{status}\" }}", Encoding.UTF8, "application/json"));
-                _logger.LogInformation($"Deployment {payload.deployment.id} status set to {status}:  {response.StatusCode}");
+                var response = await _client.PostAsync(payload.deployment_callback_url, content);
+                if (response.StatusCode != HttpStatusCode.NoContent)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    var req = await response.RequestMessage.Content.ReadAsStringAsync();
+                    _logger.LogError($"{req} \n\n {body}");
+                }
+                else 
+                {
+                    _logger.LogInformation($"Deployment {payload.deployment.id} status set to {status}:  {response.StatusCode}");
+                }
+
             }
         }
     }

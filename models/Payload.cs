@@ -2,6 +2,7 @@
 public class Payload
 {
     public string action { get; set; }
+    public string deployment_callback_url { get; set; }
     public Deployment deployment { get; set; }
     public Installation installation { get; set; }
 }

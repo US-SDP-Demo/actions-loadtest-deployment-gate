@@ -61,7 +61,7 @@ namespace github_app_auth
             }
         }
 
-        internal async Task<GitHubClient> FetchInstallationClient (string installationId)
+        internal async Task<string> FetchInstallationToken (string installationId)
         {
             try 
             {
@@ -70,17 +70,12 @@ namespace github_app_auth
 
                 var response = await _ghclient.GitHubApps.CreateInstallationToken(int.Parse(installationId));
 
-                var installationClient = new GitHubClient(new ProductHeaderValue("Azure-Load-Test-Deployment-Gate"))
-                {
-                    Credentials = new Credentials(response.Token)
-                };
-
-                return installationClient;
+                return response.Token;
             }
             catch(Exception ex)
             {
                 _logger.LogError(ex, "Error fetching installation token");
-                return null;
+                return string.Empty;
             }
         }
 
@@ -95,7 +90,7 @@ namespace github_app_auth
                 client.DefaultRequestHeaders.Add("User-Agent", "Azure-Load-Test-Deployment-Gate");
                 client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
                 client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-                var response = client.GetAsync("https://api.github.com/app").Result;
+                var response = client.GetAsync("https://api.github.com/repos/US-SDP-Demo/nodejs-appsvc-cosmosdb-bottleneck/deployments/1125897939/statuses").Result;
                 var body = response.Content.ReadAsStringAsync().Result;
                 _logger.LogInformation(body);
             }
